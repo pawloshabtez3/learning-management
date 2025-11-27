@@ -278,18 +278,29 @@
     - Display progress for enrolled students
     - _Requirements: 2.2, 2.3, 3.3_
 
-- [ ] 10. Build lesson player and quiz pages
-  - [ ] 10.1 Create lesson player page
+- [x] 10. Build lesson player and quiz pages
+
+
+
+
+
+
+  - [x] 10.1 Create lesson player page
+
     - Integrate Video.js for MP4 playback
     - Display lesson content alongside video
     - Add AI summary button
     - _Requirements: 3.1, 3.4, 5.1_
-  - [ ] 10.2 Implement progress tracking UI
+
+  - [x] 10.2 Implement progress tracking UI
+
     - Mark lesson complete on video end
     - Update progress via API
     - Show completion status in UI
     - _Requirements: 3.2, 3.3_
-  - [ ] 10.3 Create quiz page
+
+  - [x] 10.3 Create quiz page
+
     - Build quiz question components
     - Handle answer selection and submission
     - Display results and score
