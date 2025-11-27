@@ -1,41 +1,75 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 
-interface Quiz {
+export interface Quiz {
   id: string;
   lessonId: string;
   questions: QuizQuestion[];
+  createdAt: string;
 }
 
-interface QuizQuestion {
+export interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
   order: number;
+  quizId: string;
 }
 
-interface QuizSubmission {
+export interface QuizSubmission {
   quizId: string;
   answers: number[];
 }
 
-interface QuizResult {
+export interface QuizResult {
+  id: string;
   score: number;
   totalQuestions: number;
+  answers: number[];
+  submittedAt: string;
+  userId: string;
+  quizId: string;
 }
 
-// Hook for quiz functionality
-// Will be fully implemented in task 10.3
-export function useQuiz(lessonId: string) {
+export function useQuiz(lessonId: string, enabled = true) {
   return useQuery<Quiz>({
     queryKey: ['quiz', lessonId],
-    queryFn: () => api.get<Quiz>(`/lessons/${lessonId}/quiz`),
-    enabled: !!lessonId,
+    queryFn: async () => {
+      const response = await api.get<Quiz>(`/quiz/lesson/${lessonId}`);
+      return response.data;
+    },
+    enabled: enabled && !!lessonId,
   });
 }
 
+export function useQuizResult(quizId: string, enabled = true) {
+  return useQuery<QuizResult | null>({
+    queryKey: ['quiz-result', quizId],
+    queryFn: async () => {
+      try {
+        const response = await api.get<QuizResult>(`/quiz/${quizId}/result`);
+        return response.data;
+      } catch {
+        // Return null if no result exists yet
+        return null;
+      }
+    },
+    enabled: enabled && !!quizId,
+  });
+}
+
+
 export function useSubmitQuiz() {
+  const queryClient = useQueryClient();
+
   return useMutation<QuizResult, Error, QuizSubmission>({
-    mutationFn: (submission) => api.post<QuizResult>('/quiz/submit', submission),
+    mutationFn: async (submission) => {
+      const response = await api.post<QuizResult>('/quiz/submit', submission);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Cache the result
+      queryClient.setQueryData(['quiz-result', data.quizId], data);
+    },
   });
 }
