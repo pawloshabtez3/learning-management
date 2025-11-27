@@ -1,16 +1,47 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
-// Hook for auth-related functionality
-// Will be fully implemented in task 8.1
 export function useAuth() {
-  const { user, isAuthenticated, isLoading, login, logout } = useAuthStore();
+  const router = useRouter();
+  const { 
+    user, 
+    isAuthenticated, 
+    isLoading, 
+    error,
+    login, 
+    logout, 
+    register,
+    refreshToken,
+    setError,
+  } = useAuthStore();
+
+  const redirectToLogin = useCallback(() => {
+    router.push('/login');
+  }, [router]);
+
+  const redirectToDashboard = useCallback(() => {
+    if (user?.role === 'INSTRUCTOR') {
+      router.push('/instructor/dashboard');
+    } else {
+      router.push('/student/dashboard');
+    }
+  }, [router, user?.role]);
 
   return {
     user,
     isAuthenticated,
     isLoading,
+    error,
     login,
     logout,
+    register,
+    refreshToken,
+    setError,
+    redirectToLogin,
+    redirectToDashboard,
     isStudent: user?.role === 'STUDENT',
     isInstructor: user?.role === 'INSTRUCTOR',
   };
