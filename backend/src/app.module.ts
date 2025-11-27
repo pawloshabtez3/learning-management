@@ -10,6 +10,7 @@ import { LessonsModule } from './lessons/lessons.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ProgressModule } from './progress/progress.module';
 import { QuizModule } from './quiz/quiz.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { QuizModule } from './quiz/quiz.module';
     EnrollmentsModule,
     ProgressModule,
     QuizModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

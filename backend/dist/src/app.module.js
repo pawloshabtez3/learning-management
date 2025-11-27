@@ -19,6 +19,7 @@ const lessons_module_1 = require("./lessons/lessons.module");
 const enrollments_module_1 = require("./enrollments/enrollments.module");
 const progress_module_1 = require("./progress/progress.module");
 const quiz_module_1 = require("./quiz/quiz.module");
+const ai_module_1 = require("./ai/ai.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -37,6 +38,7 @@ exports.AppModule = AppModule = __decorate([
             enrollments_module_1.EnrollmentsModule,
             progress_module_1.ProgressModule,
             quiz_module_1.QuizModule,
+            ai_module_1.AiModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

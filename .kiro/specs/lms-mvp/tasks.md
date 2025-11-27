@@ -213,38 +213,66 @@
     - Test caching mechanism
     - _Requirements: 5.2, 7.2_
 
-- [ ] 8. Build frontend authentication pages
-  - [ ] 8.1 Set up API client and auth store
+- [x] 8. Build frontend authentication pages
+
+
+
+
+  - [x] 8.1 Set up API client and auth store
+
+
     - Create axios-based API client with interceptors
     - Set up Zustand store for auth state
     - Implement token refresh logic
     - _Requirements: 1.2, 1.5_
-  - [ ] 8.2 Create login page
+
+  - [x] 8.2 Create login page
+
     - Build login form with validation
     - Handle login API call and token storage
     - Redirect on successful login
     - _Requirements: 1.2, 1.4_
-  - [ ] 8.3 Create registration page
+
+  - [x] 8.3 Create registration page
+
     - Build registration form with role selection
     - Handle registration API call
     - Show success/error feedback
     - _Requirements: 1.1, 1.3_
-  - [ ] 8.4 Implement auth middleware
+
+
+  - [x] 8.4 Implement auth middleware
+
+
+
+
+
     - Create route protection for authenticated pages
     - Redirect unauthenticated users to login
     - _Requirements: 8.5_
 
-- [ ] 9. Build course browsing pages
-  - [ ] 9.1 Create landing page
+- [x] 9. Build course browsing pages
+
+
+
+
+
+  - [x] 9.1 Create landing page
+
+
     - Build hero section and feature highlights
     - Add call-to-action for registration
     - _Requirements: 2.1_
-  - [ ] 9.2 Create course list page
+
+  - [x] 9.2 Create course list page
+
     - Build CourseCard and CourseList components
     - Fetch and display all courses
     - Add search/filter functionality
     - _Requirements: 2.1_
-  - [ ] 9.3 Create course detail page
+
+  - [x] 9.3 Create course detail page
+
     - Display course info and lesson list
     - Show enrollment button for students
     - Display progress for enrolled students
