@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,8 +21,8 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCourse } from '@/hooks/useCourses';
-import { useCreateLesson } from '@/hooks/useInstructor';
+import { useLesson } from '@/hooks/useLessons';
+import { useUpdateLesson } from '@/hooks/useInstructor';
 import { AxiosError } from 'axios';
 import type { ApiError } from '@/types';
 
@@ -35,17 +35,17 @@ const lessonSchema = z.object({
 
 type LessonFormValues = z.infer<typeof lessonSchema>;
 
-function CreateLessonForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const courseId = searchParams.get('courseId');
-  const { toast } = useToast();
-  const { data: course, isLoading: courseLoading } = useCourse(courseId || '');
-  const createLesson = useCreateLesson();
-  const [isLoading, setIsLoading] = useState(false);
+interface EditLessonPageProps {
+  params: Promise<{ id: string }>;
+}
 
-  // Calculate next order number based on existing lessons
-  const nextOrder = (course?.lessons?.length ?? 0) + 1;
+export default function EditLessonPage({ params }: EditLessonPageProps) {
+  const { id } = use(params);
+  const router = useRouter();
+  const { toast } = useToast();
+  const { data: lesson, isLoading: lessonLoading } = useLesson(id);
+  const updateLesson = useUpdateLesson();
+  const [isLoading, setIsLoading] = useState(false);
 
 
   const form = useForm<LessonFormValues>({
@@ -54,45 +54,41 @@ function CreateLessonForm() {
       title: '',
       content: '',
       videoUrl: '',
-      order: nextOrder,
+      order: 1,
     },
   });
 
-  // Update order when course loads
-  if (course && form.getValues('order') === 1 && nextOrder > 1) {
-    form.setValue('order', nextOrder);
-  }
+  useEffect(() => {
+    if (lesson) {
+      form.reset({
+        title: lesson.title,
+        content: lesson.content,
+        videoUrl: lesson.videoUrl,
+        order: lesson.order,
+      });
+    }
+  }, [lesson, form]);
 
   const onSubmit = async (data: LessonFormValues) => {
-    if (!courseId) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Course ID is required',
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const lesson = await createLesson.mutateAsync({
-        title: data.title,
-        content: data.content,
-        videoUrl: data.videoUrl,
-        order: data.order,
-        courseId,
+      await updateLesson.mutateAsync({
+        id,
+        data: {
+          title: data.title,
+          content: data.content,
+          videoUrl: data.videoUrl,
+          order: data.order,
+        },
       });
       
       toast({
-        title: 'Lesson created!',
-        description: 'Your lesson has been added to the course.',
+        title: 'Lesson updated!',
+        description: 'Your changes have been saved.',
       });
-      
-      // Redirect to lesson edit page or back to course edit
-      router.push(`/instructor/courses/${courseId}/edit`);
     } catch (error) {
       const axiosError = error as AxiosError<ApiError>;
-      const message = axiosError.response?.data?.message || 'Failed to create lesson';
+      const message = axiosError.response?.data?.message || 'Failed to update lesson';
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -103,32 +99,21 @@ function CreateLessonForm() {
     }
   };
 
-  if (!courseId) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-500 mb-4">No course selected</p>
-        <Link href="/instructor/dashboard">
-          <Button>Back to Dashboard</Button>
-        </Link>
-      </div>
-    );
-  }
-
-  if (courseLoading) {
+  if (lessonLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading course...</p>
+          <p className="text-muted-foreground">Loading lesson...</p>
         </div>
       </div>
     );
   }
 
-  if (!course) {
+  if (!lesson) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-500 mb-4">Course not found</p>
+        <p className="text-red-500 mb-4">Lesson not found</p>
         <Link href="/instructor/dashboard">
           <Button>Back to Dashboard</Button>
         </Link>
@@ -140,16 +125,15 @@ function CreateLessonForm() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <Link href={`/instructor/courses/${courseId}/edit`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+        <Link href={`/instructor/courses/${lesson.courseId}/edit`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to {course.title}
+          Back to Course
         </Link>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Add New Lesson</CardTitle>
-          <p className="text-sm text-muted-foreground">Adding lesson to: {course.title}</p>
+          <CardTitle>Edit Lesson</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -177,12 +161,11 @@ function CreateLessonForm() {
                     <FormControl>
                       <textarea
                         className="flex min-h-[200px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder="Write the lesson content here. You can include explanations, examples, and key concepts..."
+                        placeholder="Write the lesson content here..."
                         disabled={isLoading}
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>The text content that accompanies the video</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -195,9 +178,9 @@ function CreateLessonForm() {
                   <FormItem>
                     <FormLabel>Video URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="/videos/lesson-1.mp4 or https://example.com/video.mp4" disabled={isLoading} {...field} />
+                      <Input placeholder="/videos/lesson-1.mp4" disabled={isLoading} {...field} />
                     </FormControl>
-                    <FormDescription>Path to the video file (local path like /videos/lesson.mp4 or external URL)</FormDescription>
+                    <FormDescription>Path to the video file</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -218,7 +201,6 @@ function CreateLessonForm() {
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                       />
                     </FormControl>
-                    <FormDescription>The position of this lesson in the course (1 = first)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -227,9 +209,9 @@ function CreateLessonForm() {
               <div className="flex gap-4">
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Lesson
+                  Save Changes
                 </Button>
-                <Link href={`/instructor/courses/${courseId}/edit`}>
+                <Link href={`/instructor/courses/${lesson.courseId}/edit`}>
                   <Button type="button" variant="outline" disabled={isLoading}>
                     Cancel
                   </Button>
@@ -239,18 +221,36 @@ function CreateLessonForm() {
           </Form>
         </CardContent>
       </Card>
-    </div>
-  );
-}
 
-export default function CreateLessonPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    }>
-      <CreateLessonForm />
-    </Suspense>
+      {lesson.quiz ? (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Quiz</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              This lesson has a quiz with {lesson.quiz.questions?.length ?? 0} questions.
+            </p>
+            <Link href={`/instructor/quiz/${lesson.quiz.id}/edit`}>
+              <Button variant="outline">Edit Quiz</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Quiz</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              No quiz has been created for this lesson yet.
+            </p>
+            <Link href={`/instructor/quiz/create?lessonId=${id}`}>
+              <Button>Create Quiz</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
