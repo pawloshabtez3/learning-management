@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  password    String
+  name        String
+  role        Role         @default(STUDENT)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  courses     Course[]     @relation("InstructorCourses")
+  enrollments Enrollment[]
+  progress    Progress[]
+  quizResults QuizResult[]
+}
+
+model Course {
+  id           String       @id @default(uuid())
+  title        String
+  description  String
+  thumbnail    String?
+  published    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  instructorId String
+  instructor   User         @relation("InstructorCourses", fields: [instructorId], references: [id])
+  enrollments  Enrollment[]
+  lessons      Lesson[]
+}
+
+model Lesson {
+  id           String        @id @default(uuid())
+  title        String
+  content      String
+  videoUrl     String
+  order        Int
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  courseId     String
+  course       Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress     Progress[]
+  quiz         Quiz?
+  summaryCache SummaryCache?
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  enrolledAt DateTime @default(now())
+  userId     String
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model Progress {
+  id          String    @id @default(uuid())
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  userId      String
+  lessonId    String
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+}
+
+model Quiz {
+  id        String         @id @default(uuid())
+  createdAt DateTime       @default(now())
+  lessonId  String         @unique
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  results   QuizResult[]
+}
+
+model QuizQuestion {
+  id           String @id @default(uuid())
+  question     String
+  options      String
+  correctIndex Int
+  order        Int
+  quizId       String
+  quiz         Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model QuizResult {
+  id             String   @id @default(uuid())
+  score          Int
+  totalQuestions Int
+  answers        String
+  submittedAt    DateTime @default(now())
+  userId         String
+  quizId         String
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, quizId])
+}
+
+model SummaryCache {
+  id        String   @id @default(uuid())
+  summary   String
+  createdAt DateTime @default(now())
+  lessonId  String   @unique
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+}
